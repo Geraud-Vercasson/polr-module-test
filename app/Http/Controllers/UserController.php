@@ -49,7 +49,12 @@ class UserController extends Controller {
             return redirect()->route('index');
         }
         else {
-            return redirect('login')->with('error', 'Invalid password or inactivated account. Try again.');
+            if (UserHelper::userIsValid($username)) {
+                return redirect('login')->with('error', 'Invalid password or inactivated account. Try again.');
+            }
+            else {
+                return redirect('login')->with('error', 'Invalid username');
+            }
         }
     }
 
@@ -57,36 +62,40 @@ class UserController extends Controller {
         if (env('POLR_ALLOW_ACCT_CREATION') == false) {
             return redirect(route('index'))->with('error', 'Sorry, but registration is disabled.');
         }
-
+        
         if (env('POLR_ACCT_CREATION_RECAPTCHA')) {
             // Verify reCAPTCHA if setting is enabled
             $gRecaptchaResponse = $request->input('g-recaptcha-response');
-
+            
             $recaptcha = new \ReCaptcha\ReCaptcha(env('POLR_RECAPTCHA_SECRET_KEY'));
             $recaptcha_resp = $recaptcha->verify($gRecaptchaResponse, $request->ip());
-
+            
             if (!$recaptcha_resp->isSuccess()) {
                 return redirect(route('signup'))->with('error', 'You must complete the reCAPTCHA to register.');
             }
         }
-
+        
         // Validate signup form data
         $this->validate($request, [
             'username' => 'required',
             'password' => 'required',
             'email' => 'required|email'
-        ]);
-
-        $username = $request->input('username');
-        $password = $request->input('password');
-        $email = $request->input('email');
-
-        if (env('SETTING_RESTRICT_EMAIL_DOMAIN')) {
-            $email_domain = explode('@', $email)[1];
-            $permitted_email_domains = explode(',', env('SETTING_ALLOWED_EMAIL_DOMAINS'));
-
-            if (!in_array($email_domain, $permitted_email_domains)) {
-                return redirect(route('signup'))->with('error', 'Sorry, your email\'s domain is not permitted to create new accounts.');
+            ]);
+            
+            $username = $request->input('username');
+            $password = $request->input('password');
+            $email = $request->input('email');
+            
+            if (!UserHelper::userIsValid($username)) {
+                return redirect(route('signup'))->with('error', 'Invalid username');
+            }
+        
+            if (env('SETTING_RESTRICT_EMAIL_DOMAIN')) {
+                $email_domain = explode('@', $email)[1];
+                $permitted_email_domains = explode(',', env('SETTING_ALLOWED_EMAIL_DOMAINS'));
+                
+                if (!in_array($email_domain, $permitted_email_domains)) {
+                    return redirect(route('signup'))->with('error', 'Sorry, your email\'s domain is not permitted to create new accounts.');
             }
         }
 

@@ -11,6 +11,8 @@ class UserHelper {
         'default'  => '',
     ];
 
+    public static $USER_PATTERN = "/[^A-Za-z0-9?!\-]/";
+
     public static function userExists($username) {
         /* XXX: used primarily with test cases */
 
@@ -35,8 +37,17 @@ class UserHelper {
         return (self::getUserByUsername($username)->role == self::$USER_ROLES['admin']);
     }
 
+    public static function userIsValid($username) {
+        return (preg_match(self::$USER_PATTERN, $username) !== 1) ? true : false ;
+    }
+
     public static function checkCredentials($username, $password) {
-        $username = preg_replace("/[^A-Za-z0-9?!\-]/",'',$username);
+        // $username = preg_replace($USER_PATTERN,'',$username);
+
+        if (!self::userIsValid($username)) {
+            return false;
+        }
+
         $user = User::where('active', 1)
             ->where('username', $username)
             ->first();

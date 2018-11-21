@@ -83,7 +83,9 @@ $app->register(App\Providers\AppServiceProvider::class);
 $app->register(\Yajra\Datatables\DatatablesServiceProvider::class);
 $app->register(\Torann\GeoIP\GeoIPServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
-
+if (env('APP_DEBUG')) {
+    $app->register(Barryvdh\Debugbar\LumenServiceProvider::class);
+   }
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes
@@ -99,5 +101,6 @@ $app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
     require __DIR__.'/../app/Http/routes.php';
 });
 
+$app->configure('debugbar');
 
 return $app;
